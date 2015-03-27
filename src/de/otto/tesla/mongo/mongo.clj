@@ -1,6 +1,7 @@
 (ns de.otto.tesla.mongo.mongo
   (:require [com.stuartsierra.component :as component]
             [monger.core :as mg]
+            [monger.query :as mq]
             [monger.collection :as mc]
             [clojure.tools.logging :as log]
             [clojure.string :as str]
@@ -158,6 +159,14 @@
 (defn remove-by-id!
   [self col id]
   (mc/remove-by-id (current-db self) col id))
+
+(defn find-ordered [self col query order limit]
+  (mq/exec
+    (-> (mq/empty-query (.getCollection (current-db self) col))
+        (mq/find query)
+        (mq/sort order)
+        (mq/limit limit))))
+
 
 (defn insert!
   [self col doc]

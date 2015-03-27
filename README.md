@@ -9,7 +9,7 @@ that allows to read an write to mongodb.
 
 Add this to your project's dependencies:
 
-`[de.otto/tesla-mongo-connect "0.1.0"]`
+`[de.otto/tesla-mongo-connect "0.1.1"]`
 
 ## TODO
 
