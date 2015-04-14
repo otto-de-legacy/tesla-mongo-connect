@@ -94,7 +94,7 @@
   (let [host (parse-server-address conf prop)]
     (mg/connect host default-options)))
 
-(defrecord Mongo [which-db config metering zookeeper app-status dbname-lookup-fn]
+(defrecord Mongo [which-db config metering app-status dbname-lookup-fn]
   component/Lifecycle
   (start [self]
     (log/info (str "-> starting mongodb " which-db))

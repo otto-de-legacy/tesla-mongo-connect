@@ -27,4 +27,8 @@
             :embongo {:port     27018
                       :version  "2.6.4"
                       :data-dir "/tmp/mongo-data-files"}
-            :profiles {:test {:env {:default-mongo-port "27018"}}})
+            :profiles {:test {:env {:default-mongo-port "27018"}}}
+            :main ^:skip-aot de.otto.tesla.mongo.example.example-system
+            :source-paths ["src" "example/src"]
+            :test-paths ["test" "test-resources" "example/test"]
+            )
