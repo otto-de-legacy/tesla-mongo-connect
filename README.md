@@ -3,7 +3,7 @@
 An addon to [tesla-microservice](https://github.com/otto-de/tesla-microservice)
 that allows to read an write to mongodb. Most accesses are metered in graphite.
 
-[![Build Status](https://#travis-ci.org/otto-de/tesla-mongo-connect.svg)](https://travis-ci.org/otto-de/tesla-mongo-connect)
+[![Build Status](https://travis-ci.org/otto-de/tesla-mongo-connect.svg)](https://travis-ci.org/otto-de/tesla-mongo-connect)
 
 ## Usage
 
