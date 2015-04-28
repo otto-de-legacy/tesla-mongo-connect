@@ -9,7 +9,7 @@ that allows to read an write to mongodb. Most accesses are metered in graphite.
 
 Add this to your project's dependencies:
 
-`[de.otto/tesla-mongo-connect "0.1.1"]`
+`[de.otto/tesla-mongo-connect "0.1.2"]`
 
 ## Usage
 

@@ -62,16 +62,28 @@
     (testing "should create host property"
       (is (= "foodb" (mongo/property-for-db config "foodb" "dbname"))))))
 
-(defn test-system-with-lookup-fn [fn]
+
+
+(defrecord FoodbNameLookup []
+  mongo/DbNameLookup
+  (dbname-lookup-fun [_ _] (fn [] "foodb"))
+  c/Lifecycle
+  (start [self] self)
+  (stop [self] self))
+
+
+(defn test-system-with-lookup []
   (-> (system/empty-system {})
-      (assoc :mongo (c/using (mongo/new-mongo "prod" fn)
-                             [:config :metering :app-status]))
+      (assoc :dbname-lookup (FoodbNameLookup.))
+      (assoc :mongo (c/using (mongo/new-mongo "prod")
+                             [:config :metering :app-status :dbname-lookup]))
       (dissoc :server)))
 
 (deftest ^:unit should-use-a-provided-dbname-fn
   (testing "it uses the provided function"
-    (u/with-started [started (test-system-with-lookup-fn (fn [] "some-DB-name"))]
-                    (is (= ((:dbname-fun (:mongo started))) "some-DB-name")))))
+    (with-redefs [mongo/new-db-connection (fn [_ _] "bar")]
+      (u/with-started [started (test-system-with-lookup)]
+                      (is (= ((:dbname-fun (:mongo started))) "foodb"))))))
 
 
 (deftest ^:integration clearing-does-not-work-on-production-data

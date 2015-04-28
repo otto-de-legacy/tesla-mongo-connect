@@ -94,7 +94,10 @@
   (let [host (parse-server-address conf prop)]
     (mg/connect host default-options)))
 
-(defrecord Mongo [which-db config metering app-status dbname-lookup-fn]
+(defprotocol DbNameLookup
+  (dbname-lookup-fun [self which-db]))
+
+(defrecord Mongo [which-db config metering app-status dbname-lookup]
   component/Lifecycle
   (start [self]
     (log/info (str "-> starting mongodb " which-db))
@@ -103,7 +106,9 @@
       (let [new-self (assoc self
                        :conn (mongo-connection conf prop)
                        :dbs (atom {})
-                       :dbname-fun (or dbname-lookup-fn (prop-resolution-fun prop))
+                       :dbname-fun (if (nil? dbname-lookup)
+                                     (prop-resolution-fun prop)
+                                     (dbname-lookup-fun dbname-lookup which-db))
                        :read-timer (metering/timer! metering (read-timer-name which-db))
                        :insert-timer (metering/timer! metering (str "mongo." which-db ".insert")))]
         (app-status/register-status-fun app-status (partial status-fun new-self))
@@ -174,5 +179,4 @@
                 (mc/insert-and-return (current-db self) col doc)))
 
 (defn new-mongo
-  ([which-db] (map->Mongo {:which-db which-db}))
-  ([which-db dbname-lookup-fn] (map->Mongo {:which-db which-db :dbname-lookup-fn dbname-lookup-fn})))
+  ([which-db] (map->Mongo {:which-db which-db})))
