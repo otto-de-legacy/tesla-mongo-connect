@@ -4,7 +4,8 @@
             [de.otto.tesla.mongo.mongo :as mongo]
             [monger.core :as mg]
             [de.otto.tesla.util.test-utils :as u]
-            [de.otto.tesla.system :as system])
+            [de.otto.tesla.system :as system]
+            [metrics.counters :as counters])
   (:import (com.mongodb MongoException DBApiLayer)))
 
 (defn mongo-test-system [config which-db]
@@ -42,7 +43,7 @@
           config {:foodb-mongo-dbname "foodb"}]
       (is (= "foodb" (mongo/property-for-db config which-db "dbname"))))))
 
-(deftest ^:unit should-create-correct-host-propterty-for-multiple-host-names
+(deftest ^:unit should-create-correct-host-property-for-multiple-host-names
   (let [conf {:default-mongo-port 27017
               :foodb-mongo-host   "foohost,blahost"}
         prop (partial mongo/property-for-db conf "foodb")
@@ -140,3 +141,18 @@
                                                :foodb-mongo-host   "foohost"} "foodb")]
                   (is (= (class (get @(:dbs (:mongo started)) "foo-db"))
                          DBApiLayer))))
+
+
+(deftest ^:unit should-count-exceptions
+  (let [number-of-exceptions (atom 100)]
+    (with-redefs [counters/inc! (fn [_] (swap! number-of-exceptions inc))]
+      (testing "does not increase counter if no exception"
+        (with-redefs [mongo/find-one! (fn [_ _ _] {})]
+          (let [_ (mongo/find-one-checked! {} "col" {})]
+            (is (= 100
+                   @number-of-exceptions)))))
+      (testing "does increase counter if exception"
+        (with-redefs [mongo/find-one! (fn [_ _ _] (throw (MongoException. "timeout")))]
+          (let [_ (mongo/find-one-checked! {} "col" {})]
+            (is (= 101
+                   @number-of-exceptions))))))))

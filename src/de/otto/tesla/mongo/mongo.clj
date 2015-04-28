@@ -8,7 +8,8 @@
             [metrics.timers :as timers]
             [de.otto.tesla.stateful.metering :as metering]
             [de.otto.tesla.stateful.app-status :as app-status]
-            [de.otto.status :as s])
+            [de.otto.status :as s]
+            [metrics.counters :as counters])
   (:import com.mongodb.ReadPreference
            (com.mongodb MongoException)))
 
@@ -110,7 +111,8 @@
                                      (prop-resolution-fun prop)
                                      (dbname-lookup-fun dbname-lookup which-db))
                        :read-timer (metering/timer! metering (read-timer-name which-db))
-                       :insert-timer (metering/timer! metering (str "mongo." which-db ".insert")))]
+                       :insert-timer (metering/timer! metering (str "mongo." which-db ".insert"))
+                       :exception-counter (metering/counter! metering (str "mongo." which-db ".exceptions")))]
         (app-status/register-status-fun app-status (partial status-fun new-self))
         (new-db-connection new-self ((:dbname-fun new-self)))
         new-self)))
@@ -147,6 +149,7 @@
   (try
     (find-one! self col query)
     (catch MongoException e
+      (counters/inc! (:exception-counter self))
       (log/warn e "mongo-exception for query: " query))))
 
 (defn find! [self col query]
