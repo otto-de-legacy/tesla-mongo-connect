@@ -96,7 +96,7 @@
     (mg/connect host default-options)))
 
 (defprotocol DbNameLookup
-  (dbname-lookup-fun [self which-db]))
+  (dbname-lookup-fun [self]))
 
 (defrecord Mongo [which-db config metering app-status dbname-lookup]
   component/Lifecycle
@@ -109,7 +109,7 @@
                        :dbs (atom {})
                        :dbname-fun (if (nil? dbname-lookup)
                                      (prop-resolution-fun prop)
-                                     (dbname-lookup-fun dbname-lookup which-db))
+                                     (dbname-lookup-fun dbname-lookup))
                        :read-timer (metering/timer! metering (read-timer-name which-db))
                        :insert-timer (metering/timer! metering (str "mongo." which-db ".insert"))
                        :exception-counter (metering/counter! metering (str "mongo." which-db ".exceptions")))]

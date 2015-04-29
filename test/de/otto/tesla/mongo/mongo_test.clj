@@ -67,7 +67,7 @@
 
 (defrecord FoodbNameLookup []
   mongo/DbNameLookup
-  (dbname-lookup-fun [_ _] (fn [] "foodb"))
+  (dbname-lookup-fun [_] (fn [] "foodb"))
   c/Lifecycle
   (start [self] self)
   (stop [self] self))
