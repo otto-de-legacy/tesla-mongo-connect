@@ -10,14 +10,13 @@
                            [de.otto/tesla-zookeeper-observer "0.1.1"]
                            [com.novemberain/monger "2.1.0"]]
 
-            :plugins [[lein-embongo "0.2.2"]]
+            :plugins [[lein-embongo "0.2.2"][lein-environ "1.0.0"]]
 
             :aliases {"test" ["do" "embongo" "test"]}
             :embongo {:port     27018
                       :version  "2.6.4"
                       :data-dir "./target/mongo-data-files"}
-            :profiles {:test {:env {:default-mongo-port "27018"
-                                    :de.flapdoodle.embed.io.tmpdir "."}}}
+            :profiles {:test {:env {:default-mongo-port "27018"}}}
             :main ^:skip-aot de.otto.tesla.mongo.example.example-system
             :source-paths ["src" "example/src"]
             :test-paths ["test" "test-resources" "example/test"])
