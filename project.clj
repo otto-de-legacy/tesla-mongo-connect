@@ -1,5 +1,3 @@
-(System/setProperty "de.flapdoodle.embed.io.tmpdir" ".")
-
 (defproject de.otto/tesla-mongo-connect "0.1.3"
             :description "Addon to https://github.com/otto-de/tesla-microservice to read and write to mongodb."
             :url "https://github.com/otto-de/tesla-mongo-connect"
@@ -17,7 +15,7 @@
             :aliases {"test" ["do" "embongo" "test"]}
             :embongo {:port     27018
                       :version  "2.6.4"
-                      :data-dir "/tmp/mongo-data-files"}
+                      :data-dir "./target/mongo-data-files"}
             :profiles {:test {:env {:default-mongo-port "27018"
                                     :de.flapdoodle.embed.io.tmpdir "."}}}
             :main ^:skip-aot de.otto.tesla.mongo.example.example-system
