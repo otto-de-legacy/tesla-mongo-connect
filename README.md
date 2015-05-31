@@ -3,14 +3,9 @@
 An addon to [tesla-microservice](https://github.com/otto-de/tesla-microservice)
 that allows to read an write to mongodb. Most accesses are metered in graphite.
 
+`[de.otto/tesla-mongo-connect "0.1.4"]`
 [![Build Status](https://travis-ci.org/otto-de/tesla-mongo-connect.svg)](https://travis-ci.org/otto-de/tesla-mongo-connect)
 [![Dependencies Status](http://jarkeeper.com/otto-de/tesla-mongo-connect/status.svg)](http://jarkeeper.com/otto-de/tesla-mongo-connect)
-
-## Usage
-
-Add this to your project's dependencies:
-
-`[de.otto/tesla-mongo-connect "0.1.4"]`
 
 ## Usage
 
