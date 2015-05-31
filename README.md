@@ -4,12 +4,13 @@ An addon to [tesla-microservice](https://github.com/otto-de/tesla-microservice)
 that allows to read an write to mongodb. Most accesses are metered in graphite.
 
 [![Build Status](https://travis-ci.org/otto-de/tesla-mongo-connect.svg)](https://travis-ci.org/otto-de/tesla-mongo-connect)
+[![Dependencies Status](http://jarkeeper.com/otto-de/tesla-mongo-connect/status.svg)](http://jarkeeper.com/otto-de/tesla-mongo-connect)
 
 ## Usage
 
 Add this to your project's dependencies:
 
-`[de.otto/tesla-mongo-connect "0.1.2"]`
+`[de.otto/tesla-mongo-connect "0.1.4"]`
 
 ## Usage
 
@@ -53,7 +54,7 @@ In the component ```:foo``` you could then find the document with the id of "foo
 For a working example see the included example code.
 
 ## TODO
-* Add description for dbname switching functionality
+* Add description for (optional) dbname switching functionality
 
 
 ## Initial Contributors
