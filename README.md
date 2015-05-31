@@ -51,7 +51,7 @@ In the component ```:foo``` you could then find the document with the id of "foo
 ```
 
 
-For a working example see the included example code.
+For a working example see [the mongo-example](https://github.com/otto-de/tesla-examples/tree/master/mongo-example). in _tesla-examples_.
 
 ## TODO
 * Add description for (optional) dbname switching functionality
