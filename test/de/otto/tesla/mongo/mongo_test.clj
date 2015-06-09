@@ -156,3 +156,19 @@
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 101
                    @number-of-exceptions))))))))
+
+(deftest ^:unit test-default-options
+  (testing "default values"
+    (let [conf {}
+          prop (partial mongo/property-for-db conf "testdb")
+          options (mongo/default-options prop)]
+      (is (= 31
+             (options :socket-timeout)))
+      (is (= 2000
+             (options :connect-timeout)))))
+  (testing "default values can be configured with properties per db"
+    (let [conf {:testdb-mongo-socket-timeout 42}
+          prop (partial mongo/property-for-db conf "testdb")
+          options (mongo/default-options prop)]
+      (is (= 42
+             (options :socket-timeout))))))

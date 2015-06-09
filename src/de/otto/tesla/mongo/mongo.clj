@@ -14,7 +14,7 @@
            (com.mongodb MongoException)))
 
 (defn property-for-db [conf which-db property-name]
-  (get conf (keyword (str which-db "-mongo-" property-name))))
+  (get conf (keyword (str which-db "-mongo-" (name property-name)))))
 
 (defn parse-port [conf prop]
   (Integer.
@@ -29,12 +29,14 @@
       (map #(mg/server-address % port) (str/split host #","))
       (mg/server-address host port))))
 
-(def default-options
-  (mg/mongo-options
-    {:socket-timeout                                     31
-     :connect-timeout                                    2000
-     :threads-allowed-to-block-for-connection-multiplier 30
-     :read-preference                                    (ReadPreference/secondary)}))
+(defn default-options [prop]
+  {:socket-timeout                                     (or (prop :socket-timeout) 31)
+   :connect-timeout                                    (or (prop :connect-timeout) 2000)
+   :threads-allowed-to-block-for-connection-multiplier 30
+   :read-preference                                    (ReadPreference/secondary)})
+
+(defn mongo-options [prop]
+  (mg/mongo-options (default-options prop)))
 
 (defn read-timer-name [db]
   (str "mongo." db ".read"))
@@ -93,7 +95,7 @@
 
 (defn mongo-connection [conf prop]
   (let [host (parse-server-address conf prop)]
-    (mg/connect host default-options)))
+    (mg/connect host (mongo-options prop))))
 
 (defprotocol DbNameLookup
   (dbname-lookup-fun [self]))
