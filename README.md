@@ -18,13 +18,16 @@ test-db1.mongo.host=localhost
 test-db1.mongo.dbname=teslatest
 test-db1.mongo.user=
 test-db1.mongo.passwd=
+test-db.mongo.socket-timeout=30
+test-db.mongo.connection-timeout=2000
 
 
 test-db2.mongo.host=other-url
 test-db2.mongo.dbname=teslaprod
 test-db2.mongo.user=user
 test-db2.mongo.passwd=passwd
-
+test-db2.mongo.socket-timeout=42
+test-db2.mongo.connection-timeout=3000
 ```
 
 Now you can establish two connections like this:
