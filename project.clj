@@ -7,7 +7,6 @@
                   :url  "https://github.com/otto-de/tesla-mongo-connect"}
             :dependencies [[org.clojure/clojure "1.6.0"]
                            [de.otto/tesla-microservice "0.1.14"]
-                           [de.otto/tesla-zookeeper-observer "0.1.1"]
                            [com.novemberain/monger "2.1.0"]]
 
             :plugins [[lein-embongo "0.2.2"]
