@@ -9,7 +9,7 @@
   (:import (com.mongodb MongoException DBApiLayer)))
 
 (defn mongo-test-system [config which-db]
-  (-> (system/empty-system config)
+  (-> (system/base-system config)
       (assoc :mongo (c/using (mongo/new-mongo which-db)
                              [:config :metering :app-status]))
       (dissoc :server)))
@@ -74,7 +74,7 @@
 
 
 (defn test-system-with-lookup []
-  (-> (system/empty-system {})
+  (-> (system/base-system {})
       (assoc :dbname-lookup (FoodbNameLookup.))
       (assoc :mongo (c/using (mongo/new-mongo "prod")
                              [:config :metering :app-status :dbname-lookup]))
