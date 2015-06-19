@@ -30,9 +30,13 @@
       (mg/server-address host port))))
 
 (defn default-options [prop]
-  {:socket-timeout                                     (or (prop :socket-timeout) 31)
-   :connect-timeout                                    (or (prop :connect-timeout) 2000)
-   :socket-keep-alive                                  (or (prop :socket-keep-alive) false)
+  {:socket-timeout                                     (if-let [st (prop :socket-timeout)]
+                                                         (read-string st)
+                                                         31)
+   :connect-timeout                                    (if-let [ct (prop :connect-timeout)]
+                                                         (read-string ct)
+                                                         2000)
+   :socket-keep-alive                                  (= "true" (prop :socket-keep-alive))
    :threads-allowed-to-block-for-connection-multiplier 30
    :read-preference                                    (ReadPreference/secondary)})
 
