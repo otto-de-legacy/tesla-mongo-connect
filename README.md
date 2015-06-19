@@ -19,6 +19,7 @@ test-db1.mongo.dbname=teslatest
 test-db1.mongo.user=
 test-db1.mongo.passwd=
 test-db.mongo.socket-timeout=30
+test-db.mongo.socket-keep-alive=true
 test-db.mongo.connection-timeout=2000
 
 

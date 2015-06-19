@@ -32,6 +32,7 @@
 (defn default-options [prop]
   {:socket-timeout                                     (or (prop :socket-timeout) 31)
    :connect-timeout                                    (or (prop :connect-timeout) 2000)
+   :socket-keep-alive                                  (or (prop :socket-keep-alive) false)
    :threads-allowed-to-block-for-connection-multiplier 30
    :read-preference                                    (ReadPreference/secondary)})
 
