@@ -165,6 +165,13 @@
                 (some-> (current-db self)
                         (mc/find-maps col query))))
 
+(defn find-checked! [self col query]
+  (try
+    (find! self col query)
+    (catch MongoException e
+      (counters/inc! (:exception-counter self))
+      (log/warn e "mongo-exception for query: " query))))
+
 (defn count! [self col query]
   (log/debugf "mongodb count: %s %s" col query)
   (timers/time! (:read-timer self)

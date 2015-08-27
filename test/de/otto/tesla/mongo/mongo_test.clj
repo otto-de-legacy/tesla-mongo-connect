@@ -151,10 +151,16 @@
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 100
                    @number-of-exceptions)))))
-      (testing "does increase counter if exception"
+      (testing "does increase counter if exception in find-one-checked!"
         (with-redefs [mongo/find-one! (fn [_ _ _] (throw (MongoException. "timeout")))]
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 101
+                   @number-of-exceptions)))))
+
+      (testing "does increase counter if exception in find-checked!"
+        (with-redefs [mongo/find! (fn [_ _ _] (throw (MongoException. "timeout")))]
+          (let [_ (mongo/find-checked! {} "col" {})]
+            (is (= 102
                    @number-of-exceptions))))))))
 
 (deftest ^:unit test-default-options
