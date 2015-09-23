@@ -33,7 +33,7 @@ test-db2.mongo.connection-timeout=3000
 
 Now you can establish two connections like this:
 
-```
+```clojure
 (defn example-system [runtime-config]
   (-> (system/empty-system (merge {:name "mongo-example-service"} runtime-config))
       (assoc :mongo1
@@ -46,7 +46,7 @@ Now you can establish two connections like this:
 
 In the component ```:foo``` you could then find the document with the id of "foo" in the collection "my-collection" in the database  ```:mongo1```  like this:
 
-```
+```clojure
   (mongo/find-one-checked! (:mongo1 self) "my-collection" {:_id "foo"})
 ```
 
