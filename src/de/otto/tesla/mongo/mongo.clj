@@ -11,7 +11,7 @@
             [de.otto.status :as s]
             [metrics.counters :as counters])
   (:import com.mongodb.ReadPreference
-           (com.mongodb MongoException)))
+           (com.mongodb MongoException MongoCredential MongoClient)))
 
 (defn property-for-db [conf which-db property-name]
   (get conf (keyword (str which-db "-mongo-" (name property-name)))))
@@ -54,22 +54,29 @@
 (defn resolve-db-name [self]
   ((:dbname-fun self)))
 
-(defn authenticate-mongo [prop db]
-  (let [u (prop "user")
-        p (prop "passwd")]
-    (if (not (str/blank? u))
-      (let [authenticated (mg/authenticate db u (.toCharArray p))]
-        (log/info (str "authentication success: " authenticated))
-        (log/info (str "Connected. Last error: " (mg/get-last-error db)))))))
+;(defn authenticate-mongo [prop db]
+;  (let [u (prop "user")
+;        p (prop "passwd")]
+;    (if (not (str/blank? u))
+;      (let [authenticated (mg/authenticate db u (.toCharArray p))]
+;        (log/info (str "authentication success: " authenticated))
+;        (log/info (str "Connected. Last error: " (mg/get-last-error db)))))))
 
-(defn authenticated-db [self connection dbname]
-  (let [conf (:config (:config self))
-        which-db (:which-db self)
-        prop (partial property-for-db conf which-db)
-        db (mg/get-db connection dbname)]
+(defn create-mongo-credential [prop dbname]
+  (let [user (get prop "user")
+        password (get prop "passwd")]
+    (if (not (str/blank? user))
+      [(MongoCredential/createCredential user dbname (.toCharArray password))]
+      []
+      )
+    ))
+
+(defn authenticated-db [conf prop dbname]
+  (let [server-address (parse-server-address conf prop)
+        cred (create-mongo-credential prop dbname)
+        options (mg/mongo-options (default-options prop))]
     (try
-      (authenticate-mongo prop db)
-      db
+      (.getDB (MongoClient. server-address cred options ) dbname)
       (catch MongoException e
         (log/error e "error authenticating mongo-connection")
         :not-connected))))
@@ -79,28 +86,24 @@
     nil
     db))
 
-(defn new-db-connection [self dbname]
+(defn new-db-connection [dbNamesToConns conf prob dbname]
   (log/info "initializing new connection for db-name " dbname)
-  (let [db (authenticated-db self (:conn self) dbname)]
-    (swap! (:dbs self) #(assoc % dbname db))
+  (let [db (authenticated-db conf prob dbname)]
+    (swap! dbNamesToConns #(assoc % dbname db))
     (nil-if-not-connected db)))
 
 (defn db-by-name [self dbname]
-  (if-let [db (get @(:dbs self) dbname)]
+  (if-let [db (get @(:dbNamesToConns self) dbname)]
     (nil-if-not-connected db)
-    (new-db-connection self dbname)))
+    (new-db-connection (:dbNamesToConns self) (:conf self) (:prob self) dbname)))
 
 (defn status-fun [self]
   (s/status-detail
     (keyword (str "mongo-" (:which-db self)))
     :ok
     "mongo"
-    {:active-dbs (keys @(:dbs self))
+    {:active-dbs (keys @(:dbNamesToConns self))
      :current-db (resolve-db-name self)}))
-
-(defn mongo-connection [conf prop]
-  (let [host (parse-server-address conf prop)]
-    (mg/connect host (mongo-options prop))))
 
 (defprotocol DbNameLookup
   (dbname-lookup-fun [self]))
@@ -110,23 +113,24 @@
   (start [self]
     (log/info (str "-> starting mongodb " which-db))
     (let [conf (:config config)
-          prop (partial property-for-db conf which-db)]
-      (let [new-self (assoc self
-                       :conn (mongo-connection conf prop)
-                       :dbs (atom {})
-                       :dbname-fun (if (nil? dbname-lookup)
-                                     (prop-resolution-fun prop)
-                                     (dbname-lookup-fun dbname-lookup))
-                       :read-timer (metering/timer! metering (read-timer-name which-db))
-                       :insert-timer (metering/timer! metering (str "mongo." which-db ".insert"))
-                       :exception-counter (metering/counter! metering (str "mongo." which-db ".exceptions")))]
-        (app-status/register-status-fun app-status (partial status-fun new-self))
-        (new-db-connection new-self ((:dbname-fun new-self)))
-        new-self)))
+          prop (partial property-for-db conf which-db)
+          new-self (assoc self
+                     :conf conf
+                     :prob prop
+                     :dbNamesToConns (atom {})
+                     :dbname-fun (if (nil? dbname-lookup)
+                                   (prop-resolution-fun prop)
+                                   (dbname-lookup-fun dbname-lookup))
+                     :read-timer (metering/timer! metering (read-timer-name which-db))
+                     :insert-timer (metering/timer! metering (str "mongo." which-db ".insert"))
+                     :exception-counter (metering/counter! metering (str "mongo." which-db ".exceptions")))]
+      (app-status/register-status-fun app-status (partial status-fun new-self))
+      (new-db-connection (:dbNamesToConns new-self) conf prop ((:dbname-fun new-self)))
+      new-self))
 
   (stop [self]
     (log/info "<- stopping mongodb")
-    (mg/disconnect (:conn self))
+    ;(mg/disconnect (:conn self))
     self))
 
 (defn current-db [self]
