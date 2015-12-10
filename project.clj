@@ -6,10 +6,9 @@
             :scm {:name "git"
                   :url  "https://github.com/otto-de/tesla-mongo-connect"}
             :dependencies [[org.clojure/clojure "1.6.0"]
-                           [com.novemberain/monger "2.1.0"]]
+                           [com.novemberain/monger "3.0.1"]]
 
-            :plugins [[lein-embongo "0.2.2"]
-                      [lein-environ "1.0.0"]]
+            :plugins [[lein-embongo "0.2.2"]]
 
             :aliases {"test" ["do" "embongo" "test"]}
             :embongo {:port     27018
@@ -17,10 +16,7 @@
                       :data-dir "./target/mongo-data-files"}
 
 
-            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.1.17"]
-                                                 [com.stuartsierra/component "0.2.3"]]}
-                       :test {:env {:default-mongo-port "27018"}}
-                       :dev  {:dependencies [[ring-mock "0.1.5"]]}}
+            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.1.19"]]}}
 
             :source-paths ["src"]
             :test-paths ["test" "test-resources"])

@@ -40,9 +40,6 @@
    :threads-allowed-to-block-for-connection-multiplier 30
    :read-preference                                    (ReadPreference/secondary)})
 
-(defn mongo-options [prop]
-  (mg/mongo-options (default-options prop)))
-
 (defn read-timer-name [db]
   (str "mongo." db ".read"))
 
@@ -54,32 +51,26 @@
 (defn resolve-db-name [self]
   ((:dbname-fun self)))
 
-;(defn authenticate-mongo [prop db]
-;  (let [u (prop "user")
-;        p (prop "passwd")]
-;    (if (not (str/blank? u))
-;      (let [authenticated (mg/authenticate db u (.toCharArray p))]
-;        (log/info (str "authentication success: " authenticated))
-;        (log/info (str "Connected. Last error: " (mg/get-last-error db)))))))
-
 (defn create-mongo-credential [prop dbname]
   (let [user (get prop "user")
         password (get prop "passwd")]
     (if (not (str/blank? user))
       [(MongoCredential/createCredential user dbname (.toCharArray password))]
-      []
-      )
-    ))
+      [])))
 
-(defn authenticated-db [conf prop dbname]
+(defn create-client [conf prop dbname]
   (let [server-address (parse-server-address conf prop)
         cred (create-mongo-credential prop dbname)
         options (mg/mongo-options (default-options prop))]
+    (MongoClient. server-address cred options )))
+
+
+(defn authenticated-db [conf prop dbname]
     (try
-      (.getDB (MongoClient. server-address cred options ) dbname)
+      (.getDB (create-client  conf prop dbname) dbname)
       (catch MongoException e
         (log/error e "error authenticating mongo-connection")
-        :not-connected))))
+        :not-connected)))
 
 (defn nil-if-not-connected [db]
   (if (= :not-connected db)
@@ -130,7 +121,7 @@
 
   (stop [self]
     (log/info "<- stopping mongodb")
-    ;(mg/disconnect (:conn self))
+    (map (fn [_ v] (mg/disconnect v))  @(:dbNamesToConns self))
     self))
 
 (defn current-db [self]

@@ -6,7 +6,7 @@
             [de.otto.tesla.util.test-utils :as u]
             [de.otto.tesla.system :as system]
             [metrics.counters :as counters])
-  (:import (com.mongodb MongoException DBApiLayer)))
+  (:import (com.mongodb MongoException DB)))
 
 (defn mongo-test-system [config which-db]
   (-> (system/base-system config)
@@ -111,6 +111,21 @@
                                                         {:_id (:_id written)})]
                       (is (= (:name read) "Bill"))))))
 
+(deftest ^:integration counting-entries-in-a-collection
+  (u/with-started [started (mongo-test-system {:cowboys-mongo-host   "localhost"
+                                               :cowboys-mongo-dbname "test-cowboy-db"} "cowboys")]
+                  (let [mongo (:mongo started)
+                        collection "test-cowboys"]
+                    (clear-collection! mongo collection)
+                    (is (= (mongo/count! mongo collection {}) 0))
+                    (mongo/insert! mongo collection
+                                                 {:name "Bill" :occupation "Cowboy"})
+                    (is (= (mongo/count! mongo collection {}) 1))
+                    (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
+                    (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
+                    )))
+
+
 (deftest ^:integration finding-documents-by-array-entry
   (u/with-started [started (mongo-test-system {:pseudonym-mongo-host   "localhost"
                                                :pseudonym-mongo-dbname "test-pseudonym-db"} "pseudonym")]
@@ -125,20 +140,21 @@
                     (is (= "someOtherId"
                            (:_id (mongo/find-one-checked! mongo col {:visitors "abc"})))))))
 
-;(deftest ^:unit should-not-throw-any-exception-if-authentication-fails
-;  (with-redefs-fn {#'mongo/authenticate-mongo (fn [_ _] (throw (MongoException. "some exception")))}
-;    #(u/with-started [started (mongo-test-system {:default-mongo-port 27017
-;                                                  :foodb-mongo-dbname "foo-db"
-;                                                  :foodb-mongo-host   "foohost"} "foodb")]
-;                     (is @(:dbNamesToConns (:mongo started))
-;                         {"foodb" :not-connected}))))
+(deftest ^:unit should-not-throw-any-exception-if-authentication-fails
+  (with-redefs-fn {#'mongo/create-client (fn [_ _ _] (throw (MongoException. "some exception")))}
+    #(u/with-started [started (mongo-test-system {:default-mongo-port 27017
+                                                  :foodb-mongo-dbname "foo-db"
+                                                  :foodb-mongo-host   "foohost"} "foodb")]
+                     (is @(:dbNamesToConns (:mongo started))
+                         {"foodb" :not-connected}))))
 
 (deftest ^:integration should-add-db-id-everything-is-fine
   (u/with-started [started (mongo-test-system {:default-mongo-port 27017
                                                :foodb-mongo-dbname "foo-db"
-                                               :foodb-mongo-host   "foohost"} "foodb")]
+                                               :foodb-mongo-host   "localhost"} "foodb")]
+                  (println (class (get @(:dbNamesToConns (:mongo started)) "foo-db")))
                   (is (= (class (get @(:dbNamesToConns (:mongo started)) "foo-db"))
-                         DBApiLayer))))
+                         DB))))
 
 
 (deftest ^:unit should-count-exceptions
