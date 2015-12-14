@@ -52,8 +52,8 @@
   ((:dbname-fun self)))
 
 (defn create-mongo-credential [prop dbname]
-  (let [user (get prop "user")
-        password (get prop "passwd")]
+  (let [user (prop "user")
+        password (prop "passwd")]
     (if (not (str/blank? user))
       [(MongoCredential/createCredential user dbname (.toCharArray password))]
       [])))
@@ -86,7 +86,7 @@
 (defn db-by-name [self dbname]
   (if-let [db (get @(:dbNamesToConns self) dbname)]
     (nil-if-not-connected db)
-    (new-db-connection (:dbNamesToConns self) (:conf self) (:prob self) dbname)))
+    (new-db-connection (:dbNamesToConns self) (:conf self) (:prop self) dbname)))
 
 (defn status-fun [self]
   (s/status-detail
@@ -107,7 +107,7 @@
           prop (partial property-for-db conf which-db)
           new-self (assoc self
                      :conf conf
-                     :prob prop
+                     :prop prop
                      :dbNamesToConns (atom {})
                      :dbname-fun (if (nil? dbname-lookup)
                                    (prop-resolution-fun prop)
