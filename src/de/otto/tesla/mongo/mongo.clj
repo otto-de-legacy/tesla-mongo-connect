@@ -62,15 +62,15 @@
   (let [server-address (parse-server-address conf prop)
         cred (create-mongo-credential prop dbname)
         options (mg/mongo-options (default-options prop))]
-    (MongoClient. server-address cred options )))
+    (MongoClient. server-address cred options)))
 
 
 (defn authenticated-db [conf prop dbname]
-    (try
-      (.getDB (create-client  conf prop dbname) dbname)
-      (catch MongoException e
-        (log/error e "error authenticating mongo-connection")
-        :not-connected)))
+  (try
+    (.getDB (create-client conf prop dbname) dbname)
+    (catch MongoException e
+      (log/error e "error authenticating mongo-connection")
+      :not-connected)))
 
 (defn nil-if-not-connected [db]
   (if (= :not-connected db)
@@ -141,18 +141,21 @@
   (timers/time! (:insert-timer self)
                 (mc/update (current-db self) col query doc {:upsert true})))
 
-(defn- find-one! [self col query]
+(defn- find-one! [self col query fields]
   (log/debugf "mongodb query: %s %s" col query)
   (timers/time! (:read-timer self)
                 (some-> (current-db self)
-                        (mc/find-one-as-map col query))))
+                        (mc/find-one-as-map col query fields))))
 
-(defn find-one-checked! [self col query]
-  (try
-    (find-one! self col query)
-    (catch MongoException e
-      (counters/inc! (:exception-counter self))
-      (log/warn e "mongo-exception for query: " query))))
+(defn find-one-checked!
+  ([self col query]
+   (find-one-checked! self col query []))
+  ([self col query fields]
+   (try
+     (find-one! self col query fields)
+     (catch MongoException e
+       (counters/inc! (:exception-counter self))
+       (log/warn e "mongo-exception for query: " query)))))
 
 (defn find! [self col query]
   (log/debugf "mongodb query: %s %s" col query)

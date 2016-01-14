@@ -119,7 +119,7 @@
                     (clear-collection! mongo collection)
                     (is (= (mongo/count! mongo collection {}) 0))
                     (mongo/insert! mongo collection
-                                                 {:name "Bill" :occupation "Cowboy"})
+                                   {:name "Bill" :occupation "Cowboy"})
                     (is (= (mongo/count! mongo collection {}) 1))
                     (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
                     (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
@@ -161,15 +161,23 @@
   (let [number-of-exceptions (atom 100)]
     (with-redefs [counters/inc! (fn [_] (swap! number-of-exceptions inc))]
       (testing "does not increase counter if no exception"
-        (with-redefs [mongo/find-one! (fn [_ _ _] {})]
+        (with-redefs [mongo/find-one! (fn [_ _ _ _] {})]
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 100
                    @number-of-exceptions)))))
       (testing "does increase counter if exception in find-one-checked!"
-        (with-redefs [mongo/find-one! (fn [_ _ _] (throw (MongoException. "timeout")))]
+        (with-redefs [mongo/find-one! (fn [_ _ _ _] (throw (MongoException. "timeout")))]
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 101
                    @number-of-exceptions)))))
+
+      (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
+        (testing "Should pass field arguments"
+          (is (= ["my.nested.field"]
+                 (mongo/find-one-checked! {} "col" {} ["my.nested.field"]))))
+        (testing "Should pass empty field arguments in case none passed in"
+          (is (= []
+                 (mongo/find-one-checked! {} "col" {})))))
 
       (testing "does increase counter if exception in find-checked!"
         (with-redefs [mongo/find! (fn [_ _ _] (throw (MongoException. "timeout")))]
@@ -189,7 +197,7 @@
       (is (= false
              (options :socket-keep-alive)))))
   (testing "default values can be configured with properties per db"
-    (let [conf {:testdb-mongo-socket-timeout "42"
+    (let [conf {:testdb-mongo-socket-timeout    "42"
                 :testdb-mongo-socket-keep-alive "true"}
           prop (partial mongo/property-for-db conf "testdb")
           options (mongo/default-options prop)]
