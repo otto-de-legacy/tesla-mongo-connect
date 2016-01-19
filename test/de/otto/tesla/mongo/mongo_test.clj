@@ -6,7 +6,7 @@
             [de.otto.tesla.util.test-utils :as u]
             [de.otto.tesla.system :as system]
             [metrics.counters :as counters])
-  (:import (com.mongodb MongoException DB)))
+  (:import (com.mongodb MongoException DB ReadPreference)))
 
 (defn mongo-test-system [config which-db]
   (-> (system/base-system config)
@@ -195,7 +195,10 @@
       (is (= 2000
              (options :connect-timeout)))
       (is (= false
-             (options :socket-keep-alive)))))
+             (options :socket-keep-alive)))
+      (is (= (ReadPreference/secondaryPreferred)
+             (options :read-preference)))))
+
   (testing "default values can be configured with properties per db"
     (let [conf {:testdb-mongo-socket-timeout    "42"
                 :testdb-mongo-socket-keep-alive "true"}
@@ -204,4 +207,13 @@
       (is (= 42
              (options :socket-timeout)))
       (is (= true
-             (options :socket-keep-alive))))))
+             (options :socket-keep-alive)))))
+
+  (testing "should choose read preference from config"
+    (let [conf {:testdb-mongo-socket-timeout    "42"
+                :testdb-mongo-socket-keep-alive "true"
+                :testdb-mongo-read-preference :primary-preferred}
+          prop (partial mongo/property-for-db conf "testdb")
+          options (mongo/default-options prop)]
+      (is (= (ReadPreference/primaryPreferred)
+             (options :read-preference))))))

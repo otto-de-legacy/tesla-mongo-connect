@@ -29,6 +29,12 @@
       (map #(mg/server-address % port) (str/split host #","))
       (mg/server-address host port))))
 
+(def read-preference {:primary-preferred   (ReadPreference/primaryPreferred)
+                      :primary             (ReadPreference/primary)
+                      :secondary-preferred (ReadPreference/secondaryPreferred)
+                      :secondary           (ReadPreference/secondary)
+                      :nearest             (ReadPreference/nearest)})
+
 (defn default-options [prop]
   {:socket-timeout                                     (if-let [st (prop :socket-timeout)]
                                                          (read-string st)
@@ -38,7 +44,7 @@
                                                          2000)
    :socket-keep-alive                                  (= "true" (prop :socket-keep-alive))
    :threads-allowed-to-block-for-connection-multiplier 30
-   :read-preference                                    (ReadPreference/secondary)})
+   :read-preference                                    ((or (prop :read-preference) :secondary-preferred) read-preference)})
 
 (defn read-timer-name [db]
   (str "mongo." db ".read"))
@@ -121,7 +127,7 @@
 
   (stop [self]
     (log/info "<- stopping mongodb")
-    (map (fn [_ v] (mg/disconnect v))  @(:dbNamesToConns self))
+    (map (fn [_ v] (mg/disconnect v)) @(:dbNamesToConns self))
     self))
 
 (defn current-db [self]
