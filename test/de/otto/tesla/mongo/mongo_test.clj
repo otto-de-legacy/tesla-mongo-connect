@@ -114,17 +114,32 @@
 (deftest ^:integration counting-entries-in-a-collection
   (u/with-started [started (mongo-test-system {:cowboys-mongo-host   "localhost"
                                                :cowboys-mongo-dbname "test-cowboy-db"} "cowboys")]
-                  (let [mongo (:mongo started)
-                        collection "test-cowboys"]
-                    (clear-collection! mongo collection)
-                    (is (= (mongo/count! mongo collection {}) 0))
-                    (mongo/insert! mongo collection
-                                   {:name "Bill" :occupation "Cowboy"})
-                    (is (= (mongo/count! mongo collection {}) 1))
-                    (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
-                    (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
-                    )))
-
+                  (testing "unchecked count"
+                    (let [mongo (:mongo started)
+                                 collection "test-cowboys"]
+                             (clear-collection! mongo collection)
+                             (is (= (mongo/count! mongo collection {}) 0))
+                             (mongo/insert! mongo collection
+                                            {:name "Bill" :occupation "Cowboy"})
+                             (is (= (mongo/count! mongo collection {}) 1))
+                             (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
+                             (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
+                             ))
+                  (testing "checked count"
+                    (let [mongo (:mongo started)
+                                 collection "test-cowboys"]
+                             (clear-collection! mongo collection)
+                             (mongo/insert! mongo collection
+                                            {:name "Bill" :occupation "Cowboy"})
+                             (is (= (mongo/count-checked! mongo collection {}) 1))
+                             ))
+                  (testing "should catch exception from mongo"
+                    (let [mongo (:mongo started)
+                          collection "test-cowboys"]
+                      (with-redefs [mongo/count! (fn [& _] (throw (MongoException. "some exception")))]
+                        (is (= nil
+                               (mongo/count-checked! mongo collection {}))) ;; Look ma no exception
+                        )))))
 
 (deftest ^:integration finding-documents-by-array-entry
   (u/with-started [started (mongo-test-system {:pseudonym-mongo-host   "localhost"

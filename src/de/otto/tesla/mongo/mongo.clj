@@ -182,6 +182,13 @@
                 (some-> (current-db self)
                         (mc/count col query))))
 
+(defn count-checked! [self col query]
+  (try
+    (count! self col query)
+    (catch MongoException e
+      (counters/inc! (:exception-counter self))
+      (log/warn e "mongo-exception for query: " query))))
+
 (defn remove-by-id!
   [self col id]
   (mc/remove-by-id (current-db self) col id))
