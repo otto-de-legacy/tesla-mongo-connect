@@ -171,6 +171,39 @@
                   (is (= (class (get @(:dbNamesToConns (:mongo started)) "foo-db"))
                          DB))))
 
+(deftest find-one-test
+  (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
+    (testing "Should pass field arguments "
+      (is (= ["my.nested.field"]
+             (mongo/find-one-checked! {} "col" {} ["my.nested.field"]))))
+    (testing "Should pass empty field arguments in case none passed in"
+      (is (= []
+             (mongo/find-one-checked! {} "col" {})))))
+
+  (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
+    (testing "Should pass field arguments"
+      (is (= ["my.nested.field"]
+             (mongo/find-one-checked! {} "col" {} ["my.nested.field"]))))
+    (testing "Should pass empty field arguments in case none passed in"
+      (is (= []
+             (mongo/find-one-checked! {} "col" {}))))))
+
+(deftest find-test
+  (with-redefs [mongo/find! (fn [_ _ _ fields] fields)]
+    (testing "Should pass field arguments "
+      (is (= ["my.nested.field"]
+             (mongo/find-checked! {} "col" {} ["my.nested.field"]))))
+    (testing "Should pass empty field arguments in case none passed in"
+      (is (= []
+             (mongo/find-checked! {} "col" {})))))
+
+  (with-redefs [mongo/find! (fn [_ _ _ fields] fields)]
+    (testing "Should pass field arguments"
+      (is (= ["my.nested.field"]
+             (mongo/find-checked! {} "col" {} ["my.nested.field"]))))
+    (testing "Should pass empty field arguments in case none passed in"
+      (is (= []
+             (mongo/find-checked! {} "col" {}))))))
 
 (deftest ^:unit should-count-exceptions
   (let [number-of-exceptions (atom 100)]
@@ -185,17 +218,8 @@
           (let [_ (mongo/find-one-checked! {} "col" {})]
             (is (= 101
                    @number-of-exceptions)))))
-
-      (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
-        (testing "Should pass field arguments"
-          (is (= ["my.nested.field"]
-                 (mongo/find-one-checked! {} "col" {} ["my.nested.field"]))))
-        (testing "Should pass empty field arguments in case none passed in"
-          (is (= []
-                 (mongo/find-one-checked! {} "col" {})))))
-
       (testing "does increase counter if exception in find-checked!"
-        (with-redefs [mongo/find! (fn [_ _ _] (throw (MongoException. "timeout")))]
+        (with-redefs [mongo/find! (fn [_ _ _ _] (throw (MongoException. "timeout")))]
           (let [_ (mongo/find-checked! {} "col" {})]
             (is (= 102
                    @number-of-exceptions))))))))
