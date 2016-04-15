@@ -42,6 +42,8 @@
    :connect-timeout                                    (if-let [ct (prop :connect-timeout)]
                                                          (read-string ct)
                                                          2000)
+   :connections-per-host                               (or (prop :max-connections-per-host) 100)
+   :min-connections-per-host                           (or (prop :min-connections-per-host) 0)
    :socket-keep-alive                                  (= "true" (prop :socket-keep-alive))
    :threads-allowed-to-block-for-connection-multiplier 30
    :read-preference                                    ((or (prop :read-preference) :secondary-preferred) read-preference)})
@@ -64,10 +66,16 @@
       [(MongoCredential/createCredential user dbname (.toCharArray password))]
       [])))
 
+(defn create-client-options [prop]
+  (let [options (default-options prop)
+        options-builder (mg/mongo-options-builder options)
+        options-builder (.minConnectionsPerHost options-builder (:min-connections-per-host options))]
+    (.build options-builder)))
+
 (defn create-client [conf prop dbname]
   (let [server-address (parse-server-address conf prop)
         cred (create-mongo-credential prop dbname)
-        options (mg/mongo-options (default-options prop))]
+        options (create-client-options prop)]
     (MongoClient. server-address cred options)))
 
 

@@ -6,7 +6,7 @@
             [de.otto.tesla.util.test-utils :as u]
             [de.otto.tesla.system :as system]
             [metrics.counters :as counters])
-  (:import (com.mongodb MongoException DB ReadPreference)))
+  (:import (com.mongodb MongoException DB ReadPreference MongoClientOptions)))
 
 (defn mongo-test-system [config which-db]
   (-> (system/base-system config)
@@ -162,6 +162,22 @@
                                                   :foodb-mongo-host   "foohost"} "foodb")]
                      (is @(:dbNamesToConns (:mongo started))
                          {"foodb" :not-connected}))))
+
+(deftest ^:unit should-set-min-connections-per-host
+  (testing "Setting the min connections per host"
+    (let [^MongoClientOptions options  (mongo/create-client-options {:min-connections-per-host 1})]
+      (is (= 1 (.getMinConnectionsPerHost options)))))
+  (testing "Default is zero"
+    (let [^MongoClientOptions options  (mongo/create-client-options {})]
+      (is (= 0 (.getMinConnectionsPerHost options))))))
+
+(deftest ^:unit should-set-max-connections-per-host
+  (testing "Setting the min connections per host"
+    (let [^MongoClientOptions options  (mongo/create-client-options {:max-connections-per-host 1})]
+      (is (= 1 (.getConnectionsPerHost options)))))
+  (testing "Default is 100"
+    (let [^MongoClientOptions options  (mongo/create-client-options {})]
+      (is (= 100 (.getConnectionsPerHost options))))))
 
 (deftest ^:integration should-add-db-id-everything-is-fine
   (u/with-started [started (mongo-test-system {:default-mongo-port 27017
