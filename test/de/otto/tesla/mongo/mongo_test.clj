@@ -187,15 +187,7 @@
                   (is (= (class (get @(:dbNamesToConns (:mongo started)) "foo-db"))
                          DB))))
 
-(deftest find-one-test
-  (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
-    (testing "Should pass field arguments "
-      (is (= ["my.nested.field"]
-             (mongo/find-one-checked! {} "col" {} ["my.nested.field"]))))
-    (testing "Should pass empty field arguments in case none passed in"
-      (is (= []
-             (mongo/find-one-checked! {} "col" {})))))
-
+(deftest find-one-checked-test
   (with-redefs [mongo/find-one! (fn [_ _ _ fields] fields)]
     (testing "Should pass field arguments"
       (is (= ["my.nested.field"]
@@ -204,15 +196,7 @@
       (is (= []
              (mongo/find-one-checked! {} "col" {}))))))
 
-(deftest find-test
-  (with-redefs [mongo/find! (fn [_ _ _ fields] fields)]
-    (testing "Should pass field arguments "
-      (is (= ["my.nested.field"]
-             (mongo/find-checked! {} "col" {} ["my.nested.field"]))))
-    (testing "Should pass empty field arguments in case none passed in"
-      (is (= []
-             (mongo/find-checked! {} "col" {})))))
-
+(deftest find-checked-test
   (with-redefs [mongo/find! (fn [_ _ _ fields] fields)]
     (testing "Should pass field arguments"
       (is (= ["my.nested.field"]
