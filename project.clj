@@ -5,8 +5,8 @@
                       :url  "http://www.apache.org/license/LICENSE-2.0.html"}
             :scm {:name "git"
                   :url  "https://github.com/otto-de/tesla-mongo-connect"}
-            :dependencies [[org.clojure/clojure "1.7.0"]
-                           [com.novemberain/monger "3.0.1"]]
+            :dependencies [[org.clojure/clojure "1.8.0"]
+                           [com.novemberain/monger "3.0.2"]]
 
             :plugins [[lein-embongo "0.2.2"]]
 
@@ -16,7 +16,7 @@
                       :data-dir "./target/mongo-data-files"}
 
 
-            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.1.24"]]}}
+            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.3.33"]]}}
 
             :source-paths ["src"]
             :test-paths ["test" "test-resources"])
