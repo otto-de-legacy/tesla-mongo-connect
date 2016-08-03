@@ -116,23 +116,23 @@
                                                :cowboys-mongo-dbname "test-cowboy-db"} "cowboys")]
                   (testing "unchecked count"
                     (let [mongo (:mongo started)
-                                 collection "test-cowboys"]
-                             (clear-collection! mongo collection)
-                             (is (= (mongo/count! mongo collection {}) 0))
-                             (mongo/insert! mongo collection
-                                            {:name "Bill" :occupation "Cowboy"})
-                             (is (= (mongo/count! mongo collection {}) 1))
-                             (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
-                             (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
-                             ))
+                          collection "test-cowboys"]
+                      (clear-collection! mongo collection)
+                      (is (= (mongo/count! mongo collection {}) 0))
+                      (mongo/insert! mongo collection
+                                     {:name "Bill" :occupation "Cowboy"})
+                      (is (= (mongo/count! mongo collection {}) 1))
+                      (is (= (mongo/count! mongo collection {:name "Bill"}) 1))
+                      (is (= (mongo/count! mongo collection {:name "Eddy"}) 0))
+                      ))
                   (testing "checked count"
                     (let [mongo (:mongo started)
-                                 collection "test-cowboys"]
-                             (clear-collection! mongo collection)
-                             (mongo/insert! mongo collection
-                                            {:name "Bill" :occupation "Cowboy"})
-                             (is (= (mongo/count-checked! mongo collection {}) 1))
-                             ))
+                          collection "test-cowboys"]
+                      (clear-collection! mongo collection)
+                      (mongo/insert! mongo collection
+                                     {:name "Bill" :occupation "Cowboy"})
+                      (is (= (mongo/count-checked! mongo collection {}) 1))
+                      ))
                   (testing "should catch exception from mongo"
                     (let [mongo (:mongo started)
                           collection "test-cowboys"]
@@ -165,18 +165,18 @@
 
 (deftest ^:unit should-set-min-connections-per-host
   (testing "Setting the min connections per host"
-    (let [^MongoClientOptions options  (mongo/create-client-options {:min-connections-per-host 1})]
+    (let [^MongoClientOptions options (mongo/create-client-options {:min-connections-per-host 1})]
       (is (= 1 (.getMinConnectionsPerHost options)))))
   (testing "Default is zero"
-    (let [^MongoClientOptions options  (mongo/create-client-options {})]
+    (let [^MongoClientOptions options (mongo/create-client-options {})]
       (is (= 0 (.getMinConnectionsPerHost options))))))
 
 (deftest ^:unit should-set-max-connections-per-host
   (testing "Setting the min connections per host"
-    (let [^MongoClientOptions options  (mongo/create-client-options {:max-connections-per-host 1})]
+    (let [^MongoClientOptions options (mongo/create-client-options {:max-connections-per-host 1})]
       (is (= 1 (.getConnectionsPerHost options)))))
   (testing "Default is 100"
-    (let [^MongoClientOptions options  (mongo/create-client-options {})]
+    (let [^MongoClientOptions options (mongo/create-client-options {})]
       (is (= 100 (.getConnectionsPerHost options))))))
 
 (deftest ^:integration should-add-db-id-everything-is-fine
@@ -251,7 +251,7 @@
   (testing "should choose read preference from config"
     (let [conf {:testdb-mongo-socket-timeout    "42"
                 :testdb-mongo-socket-keep-alive "true"
-                :testdb-mongo-read-preference :primary-preferred}
+                :testdb-mongo-read-preference   :primary-preferred}
           prop (partial mongo/property-for-db conf "testdb")
           options (mongo/default-options prop)]
       (is (= (ReadPreference/primaryPreferred)

@@ -155,11 +155,14 @@
   (timers/time! (:insert-timer self)
                 (mc/update (current-db self) col query doc {:upsert true})))
 
-(defn- find-one! [self col query fields]
-  (log/debugf "mongodb query: %s %s %s" col query fields)
-  (timers/time! (:read-timer self)
-                (some-> (current-db self)
-                        (mc/find-one-as-map col query fields))))
+(defn find-one!
+  ([self col query]
+   (find-one! self col query []))
+  ([self col query fields]
+   (log/debugf "mongodb query: %s %s %s" col query fields)
+   (timers/time! (:read-timer self)
+                 (some-> (current-db self)
+                         (mc/find-one-as-map col query fields)))))
 
 (defn find-one-checked!
   ([self col query]
