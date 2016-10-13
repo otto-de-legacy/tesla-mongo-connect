@@ -1,4 +1,4 @@
-(defproject de.otto/tesla-mongo-connect "0.2.1-SNAPSHOT"
+(defproject de.otto/tesla-mongo-connect "0.2.1"
             :description "Addon to https://github.com/otto-de/tesla-microservice to read and write to mongodb."
             :url "https://github.com/otto-de/tesla-mongo-connect"
             :license {:name "Apache License 2.0"
