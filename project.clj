@@ -1,4 +1,4 @@
-(defproject de.otto/tesla-mongo-connect "0.2.2-SNAPSHOT"
+(defproject de.otto/tesla-mongo-connect "0.3.0-SNAPSHOT"
             :description "Addon to https://github.com/otto-de/tesla-microservice to read and write to mongodb."
             :url "https://github.com/otto-de/tesla-mongo-connect"
             :license {:name "Apache License 2.0"
@@ -16,7 +16,7 @@
                       :data-dir "./target/mongo-data-files"}
 
 	    :lein-release {:deploy-via :clojars}
-            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.3.36"]]}
+            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.11.0"]]}
 		       :dev {:plugins [[lein-release/lein-release "1.0.9"]]}}
 
             :source-paths ["src"]

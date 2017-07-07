@@ -9,7 +9,10 @@
             [de.otto.tesla.stateful.metering :as metering]
             [de.otto.tesla.stateful.app-status :as app-status]
             [de.otto.status :as s]
-            [metrics.counters :as counters])
+            [metrics.counters :as counters]
+            [iapetos.core :as prom]
+            [de.otto.tesla.metrics.prometheus.core :as metrics]
+            [iapetos.core :as p])
   (:import com.mongodb.ReadPreference
            (com.mongodb MongoException MongoCredential MongoClient)))
 
@@ -113,7 +116,7 @@
 (defprotocol DbNameLookup
   (dbname-lookup-fun [self]))
 
-(defrecord Mongo [which-db config metering app-status dbname-lookup]
+(defrecord Mongo [which-db config app-status dbname-lookup]
   component/Lifecycle
   (start [self]
     (log/info (str "-> starting mongodb " which-db))
@@ -125,12 +128,11 @@
                      :dbNamesToConns (atom {})
                      :dbname-fun (if (nil? dbname-lookup)
                                    (prop-resolution-fun prop)
-                                   (dbname-lookup-fun dbname-lookup))
-                     :read-timer (metering/timer! metering (read-timer-name which-db))
-                     :insert-timer (metering/timer! metering (str "mongo." which-db ".insert"))
-                     :exception-counter (metering/counter! metering (str "mongo." which-db ".exceptions")))]
+                                   (dbname-lookup-fun dbname-lookup)))]
       (app-status/register-status-fun app-status (partial status-fun new-self))
       (new-db-connection (:dbNamesToConns new-self) conf prop ((:dbname-fun new-self)))
+      (metrics/register! (p/histogram :mongo-connect/duration-in-s {:labels [:command] :buckets [0.005 0.01 0.02 0.5]})
+                         (p/counter :mongo-connect/exceptions-total))
       new-self))
 
   (stop [self]
@@ -152,17 +154,17 @@
 
 (defn update-upserting!
   [self col query doc]
-  (timers/time! (:insert-timer self)
-                (mc/update (current-db self) col query doc {:upsert true})))
+  (prom/with-duration (metrics/get-from-default-registry :mongo-connect/duration-in-s {:command :update})
+                      (mc/update (current-db self) col query doc {:upsert true})))
 
 (defn find-one!
   ([self col query]
    (find-one! self col query []))
   ([self col query fields]
    (log/debugf "mongodb query: %s %s %s" col query fields)
-   (timers/time! (:read-timer self)
-                 (some-> (current-db self)
-                         (mc/find-one-as-map col query fields)))))
+   (prom/with-duration (metrics/get-from-default-registry :mongo-connect/duration-in-s {:command :find-one})
+                       (some-> (current-db self)
+                               (mc/find-one-as-map col query fields)))))
 
 (defn find-one-checked!
   ([self col query]
@@ -171,14 +173,14 @@
    (try
      (find-one! self col query fields)
      (catch MongoException e
-       (counters/inc! (:exception-counter self))
+       (metrics/inc! :mongo-connect/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn find! [self col query fields]
   (log/debugf "mongodb query: %s %s" col query)
-  (timers/time! (:read-timer self)
-                (some-> (current-db self)
-                        (mc/find-maps col query fields))))
+  (prom/with-duration (metrics/get-from-default-registry :mongo-connect/duration-in-s {:command :find})
+                      (some-> (current-db self)
+                              (mc/find-maps col query fields))))
 
 (defn find-checked!
   ([self col query] (find-checked! self col query []))
@@ -186,20 +188,20 @@
    (try
      (find! self col query fields)
      (catch MongoException e
-       (counters/inc! (:exception-counter self))
+       (metrics/inc! :mongo-connect/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn count! [self col query]
   (log/debugf "mongodb count: %s %s" col query)
-  (timers/time! (:read-timer self)
-                (some-> (current-db self)
-                        (mc/count col query))))
+  (prom/with-duration (metrics/get-from-default-registry :mongo-connect/duration-in-s {:command :count})
+                      (some-> (current-db self)
+                              (mc/count col query))))
 
 (defn count-checked! [self col query]
   (try
     (count! self col query)
     (catch MongoException e
-      (counters/inc! (:exception-counter self))
+      (metrics/inc! :mongo-connect/exceptions-total)
       (log/warn e "mongo-exception for query: " query))))
 
 (defn remove-by-id!
@@ -213,11 +215,10 @@
         (mq/sort order)
         (mq/limit limit))))
 
-
 (defn insert!
   [self col doc]
-  (timers/time! (:insert-timer self)
-                (mc/insert-and-return (current-db self) col doc)))
+  (prom/with-duration (metrics/get-from-default-registry :mongo-connect/duration-in-s {:command :insert})
+                      (mc/insert-and-return (current-db self) col doc)))
 
 (defn new-mongo
   ([which-db] (map->Mongo {:which-db which-db})))
