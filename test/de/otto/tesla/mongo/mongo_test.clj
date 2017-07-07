@@ -5,13 +5,13 @@
             [monger.core :as mg]
             [de.otto.tesla.util.test-utils :as u]
             [de.otto.tesla.system :as system]
-            [metrics.counters :as counters])
+            [iapetos.core :as p])
   (:import (com.mongodb MongoException DB ReadPreference MongoClientOptions)))
 
 (defn mongo-test-system [config which-db]
   (-> (system/base-system config)
       (assoc :mongo (c/using (mongo/new-mongo which-db)
-                             [:config :metering :app-status]))
+                             [:config :app-status]))
       (dissoc :server)))
 
 ;; import private method.
@@ -77,7 +77,7 @@
   (-> (system/base-system {})
       (assoc :dbname-lookup (FoodbNameLookup.))
       (assoc :mongo (c/using (mongo/new-mongo "prod")
-                             [:config :metering :app-status :dbname-lookup]))
+                             [:config :app-status :dbname-lookup]))
       (dissoc :server)))
 
 (deftest ^:unit should-use-a-provided-dbname-fn
@@ -207,7 +207,7 @@
 
 (deftest ^:unit should-count-exceptions
   (let [number-of-exceptions (atom 100)]
-    (with-redefs [counters/inc! (fn [_] (swap! number-of-exceptions inc))]
+    (with-redefs [p/inc (fn [_ _] (swap! number-of-exceptions inc))]
       (testing "does not increase counter if no exception"
         (with-redefs [mongo/find-one! (fn [_ _ _ _] {})]
           (let [_ (mongo/find-one-checked! {} "col" {})]
