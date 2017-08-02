@@ -6,7 +6,8 @@
             :scm {:name "git"
                   :url  "https://github.com/otto-de/tesla-mongo-connect"}
             :dependencies [[org.clojure/clojure "1.8.0"]
-                           [com.novemberain/monger "3.1.0"]]
+                           [com.novemberain/monger "3.1.0"]
+                           [de.otto/goo "0.2.4"]]
 
             :plugins [[lein-embongo "0.2.2"]]
 
@@ -16,7 +17,7 @@
                       :data-dir "./target/mongo-data-files"}
 
 	    :lein-release {:deploy-via :clojars}
-            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.11.0"]]}
+            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.11.4"]]}
 		       :dev {:plugins [[lein-release/lein-release "1.0.9"]]}}
 
             :source-paths ["src"]

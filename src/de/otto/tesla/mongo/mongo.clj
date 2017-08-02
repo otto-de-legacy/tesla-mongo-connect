@@ -5,13 +5,10 @@
             [monger.collection :as mc]
             [clojure.tools.logging :as log]
             [clojure.string :as str]
-            [metrics.timers :as timers]
-            [de.otto.tesla.stateful.metering :as metering]
             [de.otto.tesla.stateful.app-status :as app-status]
             [de.otto.status :as s]
-            [metrics.counters :as counters]
             [iapetos.core :as prom]
-            [de.otto.tesla.metrics.prometheus.core :as metrics]
+            [de.otto.goo.goo :as goo]
             [iapetos.core :as p])
   (:import com.mongodb.ReadPreference
            (com.mongodb MongoException MongoCredential MongoClient)))
@@ -131,7 +128,7 @@
                                    (dbname-lookup-fun dbname-lookup)))]
       (app-status/register-status-fun app-status (partial status-fun new-self))
       (new-db-connection (:dbNamesToConns new-self) conf prop ((:dbname-fun new-self)))
-      (metrics/register! (p/histogram :mongo/duration-in-s {:labels [:command] :buckets [0.005 0.01 0.02 0.5]})
+      (goo/register! (p/histogram :mongo/duration-in-s {:labels [:command] :buckets [0.005 0.01 0.02 0.5]})
                          (p/counter :mongo/exceptions-total))
       new-self))
 
@@ -154,7 +151,7 @@
 
 (defn update-upserting!
   [self col query doc]
-  (prom/with-duration (metrics/get-from-default-registry :mongo/duration-in-s {:command :update})
+  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :update})
                       (mc/update (current-db self) col query doc {:upsert true})))
 
 (defn find-one!
@@ -162,7 +159,7 @@
    (find-one! self col query []))
   ([self col query fields]
    (log/debugf "mongodb query: %s %s %s" col query fields)
-   (prom/with-duration (metrics/get-from-default-registry :mongo/duration-in-s {:command :find-one})
+   (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :find-one})
                        (some-> (current-db self)
                                (mc/find-one-as-map col query fields)))))
 
@@ -173,12 +170,12 @@
    (try
      (find-one! self col query fields)
      (catch MongoException e
-       (metrics/inc! :mongo/exceptions-total)
+       (goo/inc! :mongo/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn find! [self col query fields]
   (log/debugf "mongodb query: %s %s" col query)
-  (prom/with-duration (metrics/get-from-default-registry :mongo/duration-in-s {:command :find})
+  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :find})
                       (some-> (current-db self)
                               (mc/find-maps col query fields))))
 
@@ -188,12 +185,12 @@
    (try
      (find! self col query fields)
      (catch MongoException e
-       (metrics/inc! :mongo/exceptions-total)
+       (goo/inc! :mongo/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn count! [self col query]
   (log/debugf "mongodb count: %s %s" col query)
-  (prom/with-duration (metrics/get-from-default-registry :mongo/duration-in-s {:command :count})
+  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :count})
                       (some-> (current-db self)
                               (mc/count col query))))
 
@@ -201,7 +198,7 @@
   (try
     (count! self col query)
     (catch MongoException e
-      (metrics/inc! :mongo/exceptions-total)
+      (goo/inc! :mongo/exceptions-total)
       (log/warn e "mongo-exception for query: " query))))
 
 (defn remove-by-id!
@@ -217,7 +214,7 @@
 
 (defn insert!
   [self col doc]
-  (prom/with-duration (metrics/get-from-default-registry :mongo/duration-in-s {:command :insert})
+  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :insert})
                       (mc/insert-and-return (current-db self) col doc)))
 
 (defn new-mongo
