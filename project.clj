@@ -7,7 +7,7 @@
                   :url  "https://github.com/otto-de/tesla-mongo-connect"}
             :dependencies [[org.clojure/clojure "1.8.0"]
                            [com.novemberain/monger "3.1.0"]
-                           [de.otto/goo "0.2.4"]]
+                           [de.otto/goo "0.3.4"]]
 
             :plugins [[lein-embongo "0.2.2"]]
 
@@ -17,7 +17,7 @@
                       :data-dir "./target/mongo-data-files"}
 
 	    :lein-release {:deploy-via :clojars}
-            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.11.4"]]}
+            :profiles {:provided {:dependencies [[de.otto/tesla-microservice "0.11.7"]]}
 		       :dev {:plugins [[lein-release/lein-release "1.0.9"]]}}
 
             :source-paths ["src"]

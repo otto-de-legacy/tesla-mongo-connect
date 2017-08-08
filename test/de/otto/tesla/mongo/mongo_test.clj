@@ -4,8 +4,7 @@
             [de.otto.tesla.mongo.mongo :as mongo]
             [monger.core :as mg]
             [de.otto.tesla.util.test-utils :as u]
-            [de.otto.tesla.system :as system]
-            [iapetos.core :as p])
+            [de.otto.tesla.system :as system])
   (:import (com.mongodb MongoException DB ReadPreference MongoClientOptions)))
 
 (defn mongo-test-system [config which-db]
@@ -204,25 +203,6 @@
     (testing "Should pass empty field arguments in case none passed in"
       (is (= []
              (mongo/find-checked! {} "col" {}))))))
-
-(deftest ^:unit should-count-exceptions
-  (let [number-of-exceptions (atom 100)]
-    (with-redefs [p/inc (fn [_ _] (swap! number-of-exceptions inc))]
-      (testing "does not increase counter if no exception"
-        (with-redefs [mongo/find-one! (fn [_ _ _ _] {})]
-          (let [_ (mongo/find-one-checked! {} "col" {})]
-            (is (= 100
-                   @number-of-exceptions)))))
-      (testing "does increase counter if exception in find-one-checked!"
-        (with-redefs [mongo/find-one! (fn [_ _ _ _] (throw (MongoException. "timeout")))]
-          (let [_ (mongo/find-one-checked! {} "col" {})]
-            (is (= 101
-                   @number-of-exceptions)))))
-      (testing "does increase counter if exception in find-checked!"
-        (with-redefs [mongo/find! (fn [_ _ _ _] (throw (MongoException. "timeout")))]
-          (let [_ (mongo/find-checked! {} "col" {})]
-            (is (= 102
-                   @number-of-exceptions))))))))
 
 (deftest ^:unit test-default-options
   (testing "default values"

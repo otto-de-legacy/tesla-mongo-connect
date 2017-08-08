@@ -7,9 +7,7 @@
             [clojure.string :as str]
             [de.otto.tesla.stateful.app-status :as app-status]
             [de.otto.status :as s]
-            [iapetos.core :as prom]
-            [de.otto.goo.goo :as goo]
-            [iapetos.core :as p])
+            [de.otto.goo.goo :as goo])
   (:import com.mongodb.ReadPreference
            (com.mongodb MongoException MongoCredential MongoClient)))
 
@@ -128,8 +126,6 @@
                                    (dbname-lookup-fun dbname-lookup)))]
       (app-status/register-status-fun app-status (partial status-fun new-self))
       (new-db-connection (:dbNamesToConns new-self) conf prop ((:dbname-fun new-self)))
-      (goo/register! (p/histogram :mongo/duration-in-s {:labels [:command] :buckets [0.005 0.01 0.02 0.5]})
-                         (p/counter :mongo/exceptions-total))
       new-self))
 
   (stop [self]
@@ -151,16 +147,16 @@
 
 (defn update-upserting!
   [self col query doc]
-  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :update})
-                      (mc/update (current-db self) col query doc {:upsert true})))
+  (goo/timed :mongo/duration-in-s {:command :upsert}
+             (mc/update (current-db self) col query doc {:upsert true})))
 
 (defn find-one!
   ([self col query]
    (find-one! self col query []))
   ([self col query fields]
    (log/debugf "mongodb query: %s %s %s" col query fields)
-   (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :find-one})
-                       (some-> (current-db self)
+   (goo/timed :mongo/duration-in-s {:command :find-one}
+                      (some-> (current-db self)
                                (mc/find-one-as-map col query fields)))))
 
 (defn find-one-checked!
@@ -170,13 +166,12 @@
    (try
      (find-one! self col query fields)
      (catch MongoException e
-       (goo/inc! :mongo/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn find! [self col query fields]
   (log/debugf "mongodb query: %s %s" col query)
-  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :find})
-                      (some-> (current-db self)
+  (goo/timed :mongo/duration-in-s {:command :find}
+                     (some-> (current-db self)
                               (mc/find-maps col query fields))))
 
 (defn find-checked!
@@ -185,37 +180,37 @@
    (try
      (find! self col query fields)
      (catch MongoException e
-       (goo/inc! :mongo/exceptions-total)
        (log/warn e "mongo-exception for query: " query)))))
 
 (defn count! [self col query]
   (log/debugf "mongodb count: %s %s" col query)
-  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :count})
-                      (some-> (current-db self)
+  (goo/timed :mongo/duration-in-s {:command :count}
+                     (some-> (current-db self)
                               (mc/count col query))))
 
 (defn count-checked! [self col query]
   (try
     (count! self col query)
     (catch MongoException e
-      (goo/inc! :mongo/exceptions-total)
       (log/warn e "mongo-exception for query: " query))))
 
 (defn remove-by-id!
   [self col id]
-  (mc/remove-by-id (current-db self) col id))
+  (goo/timed :mongo/duration-in-s {:command :remove}
+             (mc/remove-by-id (current-db self) col id)))
 
 (defn find-ordered [self col query order limit]
-  (mq/exec
-    (-> (mq/empty-query (.getCollection (current-db self) col))
-        (mq/find query)
-        (mq/sort order)
-        (mq/limit limit))))
+  (goo/timed :mongo/duration-in-s {:command :find-ordered}
+         (mq/exec
+           (-> (mq/empty-query (.getCollection (current-db self) col))
+               (mq/find query)
+               (mq/sort order)
+               (mq/limit limit)))))
 
 (defn insert!
   [self col doc]
-  (prom/with-duration (goo/get-from-default-registry :mongo/duration-in-s {:command :insert})
-                      (mc/insert-and-return (current-db self) col doc)))
+  (goo/timed :mongo/duration-in-s {:command :insert}
+                     (mc/insert-and-return (current-db self) col doc)))
 
 (defn new-mongo
   ([which-db] (map->Mongo {:which-db which-db})))
