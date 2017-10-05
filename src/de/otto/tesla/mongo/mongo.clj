@@ -58,22 +58,22 @@
   ((:dbname-fun self)))
 
 (defn create-mongo-credential [prop dbname]
-  (let [user (prop "user")
+  (let [user     (prop "user")
         password (prop "passwd")]
     (if (not (str/blank? user))
       [(MongoCredential/createCredential user dbname (.toCharArray password))]
       [])))
 
 (defn create-client-options [prop]
-  (let [options (default-options prop)
+  (let [options         (default-options prop)
         options-builder (mg/mongo-options-builder options)
         options-builder (.minConnectionsPerHost options-builder (:min-connections-per-host options))]
     (.build options-builder)))
 
 (defn create-client [conf prop dbname]
   (let [server-address (parse-server-address conf prop)
-        cred (create-mongo-credential prop dbname)
-        options (create-client-options prop)]
+        cred           (create-mongo-credential prop dbname)
+        options        (create-client-options prop)]
     (MongoClient. server-address cred options)))
 
 
@@ -115,8 +115,8 @@
   component/Lifecycle
   (start [self]
     (log/info (str "-> starting mongodb " which-db))
-    (let [conf (:config config)
-          prop (partial property-for-db conf which-db)
+    (let [conf     (:config config)
+          prop     (partial property-for-db conf which-db)
           new-self (assoc self
                      :conf conf
                      :prop prop
@@ -145,19 +145,20 @@
   :ok)
 
 
+(defmacro timed [body command]
+  `(goo/timed :mongo/duration-in-s {:command ~command} ~body [0.001 0.005 0.01 0.05 0.1]))
+
 (defn update-upserting!
   [self col query doc]
-  (goo/timed :mongo/duration-in-s {:command :upsert}
-             (mc/update (current-db self) col query doc {:upsert true})))
+  (timed (mc/update (current-db self) col query doc {:upsert true}) :upsert))
 
 (defn find-one!
   ([self col query]
    (find-one! self col query []))
   ([self col query fields]
    (log/debugf "mongodb query: %s %s %s" col query fields)
-   (goo/timed :mongo/duration-in-s {:command :find-one}
-                      (some-> (current-db self)
-                               (mc/find-one-as-map col query fields)))))
+   (timed (some-> (current-db self)
+                  (mc/find-one-as-map col query fields)) :find-one)))
 
 (defn find-one-checked!
   ([self col query]
@@ -170,9 +171,7 @@
 
 (defn find! [self col query fields]
   (log/debugf "mongodb query: %s %s" col query)
-  (goo/timed :mongo/duration-in-s {:command :find}
-                     (some-> (current-db self)
-                              (mc/find-maps col query fields))))
+  (timed (some-> (current-db self) (mc/find-maps col query fields)) :find))
 
 (defn find-checked!
   ([self col query] (find-checked! self col query []))
@@ -184,9 +183,8 @@
 
 (defn count! [self col query]
   (log/debugf "mongodb count: %s %s" col query)
-  (goo/timed :mongo/duration-in-s {:command :count}
-                     (some-> (current-db self)
-                              (mc/count col query))))
+  (timed (some-> (current-db self)
+                 (mc/count col query)) :count))
 
 (defn count-checked! [self col query]
   (try
@@ -196,21 +194,18 @@
 
 (defn remove-by-id!
   [self col id]
-  (goo/timed :mongo/duration-in-s {:command :remove}
-             (mc/remove-by-id (current-db self) col id)))
+  (timed (mc/remove-by-id (current-db self) col id) :remove))
 
 (defn find-ordered [self col query order limit]
-  (goo/timed :mongo/duration-in-s {:command :find-ordered}
-         (mq/exec
+  (timed (mq/exec
            (-> (mq/empty-query (.getCollection (current-db self) col))
                (mq/find query)
                (mq/sort order)
-               (mq/limit limit)))))
+               (mq/limit limit))) :find-ordered))
 
 (defn insert!
   [self col doc]
-  (goo/timed :mongo/duration-in-s {:command :insert}
-                     (mc/insert-and-return (current-db self) col doc)))
+  (timed (mc/insert-and-return (current-db self) col doc) :insert))
 
 (defn new-mongo
   ([which-db] (map->Mongo {:which-db which-db})))

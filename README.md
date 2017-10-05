@@ -1,7 +1,7 @@
 # tesla-mongo-connect
 
 An addon to [tesla-microservice](https://github.com/otto-de/tesla-microservice)
-that allows to read and write to mongodb. Most accesses are metered in graphite.
+that allows to read and write to mongodb.
 
 [![Clojars Project](http://clojars.org/de.otto/tesla-mongo-connect/latest-version.svg)](http://clojars.org/de.otto/tesla-mongo-connect)
 
